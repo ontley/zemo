@@ -1,0 +1,5 @@
+__pycache__
+venv
+bot_info.json
+.env
+*.bat
