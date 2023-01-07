@@ -351,7 +351,10 @@ class Music(commands.Cog):
         player.queue.append(song)
         if not player.is_playing():
             player.play()
-        await interaction.edit_original_response(content=f'Added `{song.title}` to the queue', embed=song.to_embed())
+        await interaction.edit_original_response(
+            content=f'Added `{song.title}` to the queue',
+            embed=song.to_embed()
+        )
 
     @app_commands.command(name='insert')
     @app_commands.describe(query='What to search for')
@@ -537,7 +540,7 @@ class Music(commands.Cog):
             return
         if after.channel is not None and after.channel == player.voice_client.channel:
             player.cancel_timeout(DisconnectReason.ALONE_IN_CHANNEL)
-            with open(f'{os.getcwd()}/bot/bot_info.json') as f:
+            with open(f'{os.getcwd()}/src/bot_info.json') as f:
                 user_theme_url = json.load(f)['user_themes'][str(member.id)]
                 player.queue.append_once(Song.find_by_url(user_theme_url))
         else:
