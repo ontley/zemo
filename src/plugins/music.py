@@ -234,8 +234,9 @@ class Player(threading.Thread):
         try:
             self._do_run()
         except Exception as e:
-            self.source.cleanup()
-            self._call_on_error(e)
+            if self.source is not None:
+                self.source.cleanup()
+                self._call_on_error(e)
 
     def play(self):
         self.cancel_timeout(DisconnectReason.NOT_PLAYING)
@@ -308,13 +309,13 @@ class Music(commands.Cog):
     @user_connected()
     async def _join(self, interaction: Interaction) -> None:
         """Join your channel"""
-        player = self.players.get(id, None)
         user = interaction.user
+        player = self.players.get(user.voice.channel.id, None)
         if player is None:
             await self.join_vc(user.voice.channel)
             await interaction.response.send_message('Joining your voice channel', ephemeral=True)
             return
-        elif player.voice_client.channel == interaction.user.voice.channel:
+        if player.voice_client.channel == interaction.user.voice.channel:
             await interaction.response.send_message('Already in your channel', ephemeral=True)
         else:
             # TODO: Swap channels menu, also don't lol and shid
@@ -375,7 +376,7 @@ class Music(commands.Cog):
             )
             return
         position = min(len(player.queue), position)
-        player.queue.insert(query, position)
+        player.queue.insert(position, song)
         if not player.is_playing():
             player.play()
         await interaction.edit_original_response(content=f'Inserted `{song.title}` into positition {position} of the queue')
@@ -387,13 +388,13 @@ class Music(commands.Cog):
         try:
             song = Song.find_by_url(url)
         except VideoNotFoundError:
-            interaction.response.send_message(f'Could not find a video from url `{url}`')
+            await interaction.response.send_message(f'Could not find a video from url `{url}`')
             return
         with open(f'{os.getcwd()}/bot/bot_info.json', 'r+') as f:
             data = json.load(f)
             data[interaction.user.id] = url
-            json.dump(f)
-        interaction.response.send_message(f'Set your theme to {song.to_embed()}')
+            json.dump(data, f)
+        await interaction.response.send_message(f'Set your theme to {song.to_embed()}')
 
     @app_commands.command(name='loop')
     @app_commands.describe(mode='Looping mode')
@@ -502,7 +503,7 @@ class Music(commands.Cog):
     @app_commands.describe(position='Position of the song to remove, removes the current song if not given')
     @app_commands.guild_only()
     @user_and_bot_connected()
-    async def _remove(self, interaction: Interaction, position: int = None):
+    async def _remove(self, interaction: Interaction, position: int | None = None):
         """Removes a song from the queue, removes the current song if called without argument"""
         player = self.players[interaction.guild_id]
         if position is None:
