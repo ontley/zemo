@@ -4,7 +4,7 @@ from discord import app_commands, Interaction
 __all__ = [
     'user_and_bot_connected',
     'user_connected',
-    'bot_connected'
+    'bot_connected',
 ]
 
 

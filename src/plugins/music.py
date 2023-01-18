@@ -294,7 +294,7 @@ class Player(threading.Thread):
 
 
 class Music(commands.Cog):
-    def __init__(self, client: commands.Bot):
+    def __init__(self, client: commands.Bot) -> None:
         self.client = client
         self.players: dict[int, Player] = {}
 
@@ -385,16 +385,20 @@ class Music(commands.Cog):
     @app_commands.describe(url='The url of your theme')
     @app_commands.guild_only()
     async def _set_theme(self, interaction: Interaction, url: str) -> None:
+        await interaction.response.defer()
         try:
             song = Song.find_by_url(url)
         except VideoNotFoundError:
-            await interaction.response.send_message(f'Could not find a video from url `{url}`')
+            await interaction.edit_original_response(content=f'Could not find a video from url `{url}`')
             return
-        with open(f'{os.getcwd()}/bot/bot_info.json', 'r+') as f:
+        with open(f'{os.getcwd()}/src/bot_info.json', 'r') as f:
             data = json.load(f)
-            data[interaction.user.id] = url
+        with open(f'{os.getcwd()}/src/bot_info.json', 'w') as f:
+            data['user_themes'][interaction.user.id] = url
             json.dump(data, f)
-        await interaction.response.send_message(f'Set your theme to {song.to_embed()}')
+            await interaction.edit_original_response(content=f'Set your theme to {song.title}', embed=song.to_embed())
+            return
+        await interaction.edit_original_response(content='Command failed')
 
     @app_commands.command(name='loop')
     @app_commands.describe(mode='Looping mode')
@@ -542,8 +546,12 @@ class Music(commands.Cog):
         if after.channel is not None and after.channel == player.voice_client.channel:
             player.cancel_timeout(DisconnectReason.ALONE_IN_CHANNEL)
             with open(f'{os.getcwd()}/src/bot_info.json') as f:
-                user_theme_url = json.load(f)['user_themes'][str(member.id)]
-                player.queue.append_once(Song.find_by_url(user_theme_url))
+                themes: dict[str, str] = json.load(f)['user_themes']
+                if str(member.id) in themes:
+                    user_theme_url = themes[str(member.id)]
+                    player.queue.append_once(Song.find_by_url(user_theme_url)) 
+                    if not player.is_playing():
+                        player.play()
         else:
             members = player.voice_client.channel.members
             if all(user.bot for user in members):

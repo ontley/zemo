@@ -22,7 +22,7 @@ class Bot(commands.Bot):
         self,
         command_prefix: str,
         *,
-        plugin_dir: str = 'src/plugins',
+        plugin_dir: str = 'plugins',
         **kwargs: dict[str, Any]
     ) -> None:
         super().__init__(command_prefix, **kwargs)
@@ -34,7 +34,6 @@ class Bot(commands.Bot):
         guilds: Sequence[discord.Object]
     ) -> None:
         plugin_path = f'src/{self._plugins_dir}'
-        ext_path: str
 
         for filename in glob.iglob('**/*.py', root_dir=plugin_path, recursive=True):
             clean = filename.replace("\\", ".").rstrip('.py')
@@ -53,7 +52,7 @@ class Bot(commands.Bot):
 
 TOKEN = os.environ.get('DISCORD_TOKEN')
 if TOKEN is None:
-  raise ValueError("DISCORD_TOKEN token not found in .env file")
+    raise ValueError("DISCORD_TOKEN token not found in .env file")
 APP_ID = os.environ.get('APPLICATION_ID')
 if APP_ID is None:
     raise ValueError("APPLICATION_ID token not found in .env file")

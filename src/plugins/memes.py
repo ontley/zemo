@@ -1,0 +1,35 @@
+from discord.ext import commands
+from discord import app_commands, Interaction
+from random import choice
+
+
+LISTA_MUDRIH = [
+    'Svejedno priznajem bodove jer ne želim opet doživjeti neugodno iskustvo u kojem se Davor neprimjereno meni obraća s povišenim tonom.',
+    'Kad kurac',
+    'dakle... ja se jesam drogirao',
+    'imam neke ljude u glavi',
+    'bolje mijesat alkohol nego beton',
+    's kim si, s njim si',
+    'tko umre na jesen, njemu nema zime'
+]
+
+
+class Memes(commands.Cog):
+    def __init__(self, client: commands.Bot) -> None:
+        self.client = client
+
+    @app_commands.command(name='say')
+    @app_commands.describe(message='What do you want me to say')
+    @app_commands.guild_only()
+    async def _say(self, interaction: Interaction, message: str) -> None:
+        await interaction.channel.send(message)
+        await interaction.response.send_message('Sent message', ephemeral=True)
+
+    @app_commands.command(name='mudra', description='daj mi jednu mudru')
+    @app_commands.guild_only()
+    async def _mudra(self, interaction: Interaction) -> None:
+        await interaction.response.send_message(choice(LISTA_MUDRIH))
+
+
+async def setup(client: commands.Bot, guilds: list[int]) -> None:
+    await client.add_cog(Memes(client), guilds=guilds)
