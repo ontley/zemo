@@ -5,7 +5,6 @@ from typing import (
     Deque,
     Generic,
     Iterable,
-    Iterator,
     Optional,
     Sized,
     TypeVar,
@@ -62,80 +61,36 @@ class Queue(Generic[T]):
         self._alt_queue = deque() if items_once is None else deque(items_once)
         self._repeat = repeat
         self._index = index
-        self._jumped = False
-        self._advanced = False
+        self._advance = False
 
-    def __iter__(self) -> Iterator[T]:
-        """Get self as iterator."""
-        while True:
-            if self._alt_queue:
-                yield self._alt_queue.popleft()
-            elif self._items:
-                self._jumped = False
-                self._advanced = True
-                if self._index >= len(self._items):
-                    if self._repeat == RepeatMode.Off:
-                        break
-                    self._index %= len(self._items)
-                yield self._items[self._index]
-                if self._repeat != RepeatMode.Single:
-                    self._index += 1
-            else:
-                break
+    def __iter__(self) -> Self:
+        """Get self as an iterator."""
+        return self
+
+    def __next__(self) -> Optional[T]:
+        if self._alt_queue:
+            return self._alt_queue.popleft()
+        elif self._items:
+            if self._repeat != RepeatMode.Single and self._advance:
+                self._index += 1
+            self._advance = True
+            if self._index >= len(self._items):
+                if self._repeat == RepeatMode.Off:
+                    return None
+                self._index %= len(self._items)
+            return self._items[self._index]
+        else:
+            return None
 
     def __bool__(self) -> bool:
         """Check if the queue is non-empty."""
         return bool(self._items) or bool(self._alt_queue)
 
-    def __eq__(self, other: Sized) -> bool:
+    def __eq__(self, other: Self) -> bool:
         """Compare the items of the iterables."""
         if not isinstance(other, Iterable):
             return False
-        return len(self) == len(other) and \
-            all(s_item == o_item for s_item, o_item in zip(self._items, other))
-
-    def __add__(self, other: Self) -> Self:
-        """Concatenate two Queues."""
-        if not isinstance(other, Queue):
-            raise TypeError(
-                f'Can only concatenate {type(self).__name__} \
-                        (not "{type(other).__name__}") and {type(self).__name__}'
-            )
-        return Queue(items=self._items + other._items)
-
-    def __iadd__(self, other: Self) -> None:
-        """Concatenate to self."""
-        if not isinstance(other, Queue):
-            raise TypeError(
-                f'Can only concatenate {type(self).__name__} \
-                        (not "{type(other).__name__}") and {type(self).__name__}'
-            )
-        self._items += other._items
-
-    def __mult__(self, times: int) -> Self:
-        """
-        Repeat the Queue an integer amount of times.
-
-        Returns a Queue with the same repeat mode
-        """
-        if not isinstance(times, int):
-            raise TypeError(
-                f'Can not multiply {type(self).__name__} \
-                        by non-int of type {type(times).__name__}'
-            )
-        return Queue(
-            items=self._items*times,
-            repeat=self._repeat
-        )
-
-    def __imult__(self, times: int) -> None:
-        """Repeat own items an integer amount of times."""
-        if not isinstance(times, int):
-            raise TypeError(
-                f'Can not multiply {type(self).__name__} \
-                        by non-int of type {type(times).__name__}'
-            )
-        self._items *= times
+        return self.items == other.items and self.alt_queue == other.alt_queue
 
     def __len__(self) -> int:
         """Get the amount of items the Queue contains."""
@@ -143,7 +98,7 @@ class Queue(Generic[T]):
 
     def __repr__(self) -> str:
         """Representation of the Queue object"""
-        return f'{type(self).__qualname__}({self._items}, {self._index})'
+        return f'{type(self).__qualname__}(alt_queue={self._alt_queue}, items={self._items}, index={self._index})'
 
     __hash__ = None
 
@@ -165,13 +120,7 @@ class Queue(Generic[T]):
     @repeat.setter
     def repeat(self, value: RepeatMode):
         if not isinstance(value, RepeatMode):
-            raise TypeError(f"value must be of type {RepeatMode.__qualname__}")
-
-        if self._jumped:
-            if self._repeat == RepeatMode.Single != value:
-                self._index -= 1
-            elif self._repeat != RepeatMode.Single == value:
-                self._index += 1
+            raise TypeError(f"Value must be of type {RepeatMode.__qualname__}")
         self._repeat = value
 
     @property
@@ -188,35 +137,13 @@ class Queue(Generic[T]):
 
     @index.setter
     def index(self, value: int):
-        self._index = value % len(self._items)
-        self._advanced = False
+        self._index = value % len(self)
+        self._advance = False
 
     @property
     def current(self) -> T:
         """Get current item."""
         return self._items[self._index]
-
-    def jump(self, index: int) -> None:
-        """
-        Force next item to be at `index`, even if repeat mode is changed after.
-
-        Raises
-        ------
-        `ValueError`: index is out of range
-        """
-        if index not in range(len(self)):
-            raise ValueError('index out of range')
-        self._jumped = True
-        if self._advanced and self._repeat != RepeatMode.Single:
-            index -= 1
-        self.index = index
-
-    def skip(self, offset: int = 1) -> None:
-        """Skip ahead, force next item to be at current index + `offset`"""
-        self._jumped = True
-        if self._advanced and self._repeat != RepeatMode.Single:
-            offset -= 1
-        self.index += offset
 
     def shuffle(self) -> None:
         """Shuffles the Queue in place, putting the current item T at position 1 (index 0), and shuffling the rest"""

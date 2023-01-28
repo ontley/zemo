@@ -1,7 +1,11 @@
+import os
+import json
+
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
-from utils.checks import *
+
+from utils.checks import user_connected, user_and_bot_connected, bot_connected
 from utils.data import MusicData, music_data
 from utils.muse import Player, DisconnectReason, Song, VideoNotFoundError
 from utils.queue import RepeatMode
@@ -45,7 +49,7 @@ class Music(commands.Cog):
         await interaction.response.send_message('Leaving')
         player = self.data.players[interaction.guild_id]
         player.queue.clear()
-        del self.data.layers[interaction.guild_id]
+        del self.data.players[interaction.guild_id]
 
     @app_commands.command(name='add')
     @app_commands.describe(query='What to search for')
@@ -159,7 +163,10 @@ class Music(commands.Cog):
     async def _skip(self, interaction: Interaction, offset: int = 1) -> None:
         """Skip a certain number of songs, negative values allowed"""
         player = self.data.players[interaction.guild_id]
-        player.queue.skip(offset)
+        try:
+            player.queue.index += offset
+        except ValueError:
+            await interaction.response.send_message(f'')
         player.stop()
         song = player.queue.current
         await interaction.response.send_message(f'Skipped to `{song.title}`!')
@@ -171,13 +178,19 @@ class Music(commands.Cog):
     async def _jump(self, interaction: Interaction, position: int) -> None:
         """Jump to a certain position in the queue"""
         player = self.data.players[interaction.guild_id]
-        try:
-            player.queue.jump(position - 1)
-        except ValueError:
+        queue = player.queue
+        if position < 1:
+            await ineraction.resopnse.send_message(
+                'Can only jump to positive values',
+                ephemeral=True
+            )
+            return
+        elif position > len(queue):
             await interaction.response.send_message(
                 f'Position {position} is out of range of the queue', ephemeral=True
             )
             return
+        queue.index = position - 1
         player.stop()
         song = player.queue.current
         await interaction.response.send_message(f'Jumped to `{song.title}`')
@@ -243,7 +256,7 @@ class Music(commands.Cog):
         if after.channel == player.voice_client.channel != before.channel:
             player.cancel_timeout(DisconnectReason.ALONE_IN_CHANNEL)
             with open(f'{os.getcwd()}/data/user_themes.json') as f:
-                themes: dict[str, str] = json.load(f)['user_themes']
+                themes: dict[str, str] = json.load(f)
                 if str(member.id) in themes:
                     user_theme_url = themes[str(member.id)]
                     player.queue.alt_queue.append(Song.find_by_url(user_theme_url)) 

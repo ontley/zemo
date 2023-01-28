@@ -27,7 +27,7 @@ class Theme(app_commands.Group, name='theme'):
             with open(f'{os.getcwd()}/data/user_themes.json', 'r') as f:
                 data = json.load(f)
             with open(f'{os.getcwd()}/data/user_themes.json', 'w') as f:
-                data['user_themes'][interaction.user.id] = url
+                data[interaction.user.id] = url
                 json.dump(data, f)
                 await interaction.edit_original_response(content=f'Set your theme to {song.title}', embed=song.embed)
                 return
@@ -41,7 +41,7 @@ class Theme(app_commands.Group, name='theme'):
             with open(f'{os.getcwd()}/data/user_themes.json', 'r') as f:
                 data = json.load(f)
             with open(f'{os.getcwd()}/data/user_themes.json', 'w') as f:
-                del data['user_themes'][interaction.user.id]
+                del data[interaction.user.id]
                 json.dump(data, f)
                 await interaction.response.send_message(content=f'Cleared your theme', ephemeral=True)
                 return
