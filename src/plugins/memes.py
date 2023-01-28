@@ -5,12 +5,13 @@ from random import choice
 
 LISTA_MUDRIH = [
     'Svejedno priznajem bodove jer ne želim opet doživjeti neugodno iskustvo u kojem se Davor neprimjereno meni obraća s povišenim tonom.',
-    'Kad kurac',
-    'dakle... ja se jesam drogirao',
-    'imam neke ljude u glavi',
-    'bolje mijesat alkohol nego beton',
-    's kim si, s njim si',
-    'tko umre na jesen, njemu nema zime'
+    'Kad kurac.',
+    'Dakle... ja se jesam drogirao.',
+    'Imam neke ljude u glavi.',
+    'Bolje mijesat alkohol nego beton.',
+    'S kim si, s njim si.',
+    'Tko umre na jesen, njemu nema zime.',
+    'Tko jede, taj sere.',
 ]
 
 

@@ -7,6 +7,7 @@ from typing import (
     Iterable,
     Iterator,
     Optional,
+    Sized,
     TypeVar,
     Self
 )
@@ -58,7 +59,7 @@ class Queue(Generic[T]):
     ) -> None:
         self._items = [] if items is None else list(items)
         # TODO: items_once needs to be added in __add__ and other methods
-        self._items_once = deque() if items_once is None else deque(items_once)
+        self._alt_queue = deque() if items_once is None else deque(items_once)
         self._repeat = repeat
         self._index = index
         self._jumped = False
@@ -67,9 +68,9 @@ class Queue(Generic[T]):
     def __iter__(self) -> Iterator[T]:
         """Get self as iterator."""
         while True:
-            if self._items_once:
-                yield self._items_once.popleft()
-            else:
+            if self._alt_queue:
+                yield self._alt_queue.popleft()
+            elif self._items:
                 self._jumped = False
                 self._advanced = True
                 if self._index >= len(self._items):
@@ -79,24 +80,14 @@ class Queue(Generic[T]):
                 yield self._items[self._index]
                 if self._repeat != RepeatMode.Single:
                     self._index += 1
-
-    def __getitem__(self, index: int) -> T:
-        """Get the item at the given index."""
-        return self._items[index]
-
-    def __setitem__(self, index: int, value: T) -> None:
-        """Set the item at the given index."""
-        self._items[index] = value
-
-    def __contains__(self, item: T) -> bool:
-        """Check if the Queue contains the item."""
-        return item in self._items
+            else:
+                break
 
     def __bool__(self) -> bool:
         """Check if the queue is non-empty."""
-        return self._items != []
+        return bool(self._items) or bool(self._alt_queue)
 
-    def __eq__(self, other: Iterable[T]) -> bool:
+    def __eq__(self, other: Sized) -> bool:
         """Compare the items of the iterables."""
         if not isinstance(other, Iterable):
             return False
@@ -158,12 +149,13 @@ class Queue(Generic[T]):
 
     @property
     def items(self) -> list[T]:
-        """Get a reference of the queue items."""
+        """Get a reference to the queue items."""
         return self._items
 
     @property
-    def items_once(self) -> Deque[T]:
+    def alt_queue(self) -> Deque[T]:
         """Get a reference to the non-repeating items"""
+        return self._alt_queue
 
     @property
     def repeat(self) -> RepeatMode:
@@ -235,53 +227,9 @@ class Queue(Generic[T]):
         self._items[1:] = lst
         self._index = 0
 
-    def append(self, item: T) -> None:
-        """Append an item to the end of the queue."""
-        self._items.append(item)
-
-    def append_once(self, item: T) -> None:
-        """Append an item to the non-repeating queue"""
-        self._items_once.append(item)
-
-    def insert(self, position: int, item: T) -> None:
-        """
-        Insert a value at given position.
-
-        Increments index if item was inserted before current index.
-        """
-        self._items.insert(position, item)
-        if position <= self._index:
-            self.index += 1
-
     def clear(self) -> None:
-        """Clear the queue."""
         self._items.clear()
-        self._items_once.clear()
-
-    def pop(self, position: int = -1) -> T:
-        """
-        Remove the item at given position (default last item) and return it.
-
-        Decrements index if removed item was before current index.
-        """
-        if self._index >= position != -1:
-            self._index -= 1
-        return self._items.pop(position)
-
-    def remove(
-        self,
-        item: T,
-    ) -> None:
-        """
-        Remove first instance of `item` found.
-
-        Decrements index if removed item was before current index.
-        """
-        for i, iitem in enumerate(self._items):
-            if iitem == item:
-                del self._items[i]
-                if i < self._index:
-                    self._index -= 1
+        self._alt_queue.clear()
 
 
 if __name__ == '__main__':

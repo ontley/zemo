@@ -1,5 +1,4 @@
 __pycache__
-venv
-bot_info.json
+venv/
+data/
 .env
-*.bat

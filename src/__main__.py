@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv(f'{os.getcwd()}/.env')
 
 
-with open('src/bot_info.json', 'r') as bot_info_json:
+with open('data/bot_info.json', 'r') as bot_info_json:
     guild_ids = json.load(bot_info_json)['guilds']
     GUILD_IDS = list(map(discord.Object, guild_ids))
 
