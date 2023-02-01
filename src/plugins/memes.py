@@ -12,6 +12,7 @@ LISTA_MUDRIH = [
     'S kim si, s njim si.',
     'Tko umre na jesen, njemu nema zime.',
     'Tko jede, taj sere.',
+    'Na mrtvom vuku i zec kurac ostri',
 ]
 
 

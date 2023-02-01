@@ -180,7 +180,7 @@ class Music(commands.Cog):
         player = self.data.players[interaction.guild_id]
         queue = player.queue
         if position < 1:
-            await ineraction.resopnse.send_message(
+            await interaction.response.send_message(
                 'Can only jump to positive values',
                 ephemeral=True
             )

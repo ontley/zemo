@@ -6,7 +6,6 @@ from typing import (
     Generic,
     Iterable,
     Optional,
-    Sized,
     TypeVar,
     Self
 )
@@ -76,11 +75,11 @@ class Queue(Generic[T]):
             self._advance = True
             if self._index >= len(self._items):
                 if self._repeat == RepeatMode.Off:
-                    return None
+                    raise StopIteration
                 self._index %= len(self._items)
             return self._items[self._index]
         else:
-            return None
+            raise StopIteration
 
     def __bool__(self) -> bool:
         """Check if the queue is non-empty."""
@@ -88,8 +87,6 @@ class Queue(Generic[T]):
 
     def __eq__(self, other: Self) -> bool:
         """Compare the items of the iterables."""
-        if not isinstance(other, Iterable):
-            return False
         return self.items == other.items and self.alt_queue == other.alt_queue
 
     def __len__(self) -> int:
@@ -137,7 +134,9 @@ class Queue(Generic[T]):
 
     @index.setter
     def index(self, value: int):
-        self._index = value % len(self)
+        self._index = 0
+        if self._items:
+            self._index = value
         self._advance = False
 
     @property
@@ -160,7 +159,6 @@ class Queue(Generic[T]):
 
 
 if __name__ == '__main__':
-    q = Queue(range(100))
+    q = Queue(range(10))
     q.repeat = RepeatMode.Off
-    for item in q:
-        print(item, end=' ')
+    print(' '.join(map(str, q)))
