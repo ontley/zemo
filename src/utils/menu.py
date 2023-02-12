@@ -87,7 +87,9 @@ class ListMenu(View):
     def _update_page(self, page: int):
         self._page = page
         items = map(
-            str, self._items[page*self._per_page: (page + 1) * self._per_page])
+            str,
+            self._items[page*self._per_page: (page + 1) * self._per_page]
+        )
         self._embed.description = self._basic_desc + '\n'.join(items)
         self._embed.set_footer(text=f'{self._page + 1}/{self.max_pages}')
 
@@ -112,6 +114,7 @@ class ListMenu(View):
             'Only the person who sent the queue command can control it',
             ephemeral=True
         )
+        return False
 
     @button(label='«')
     async def _first_page(

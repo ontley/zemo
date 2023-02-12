@@ -66,7 +66,7 @@ class Queue(Generic[T]):
         """Get self as an iterator."""
         return self
 
-    def __next__(self) -> Optional[T]:
+    def __next__(self) -> T:
         if self._alt_queue:
             return self._alt_queue.popleft()
         elif self._items:
@@ -122,13 +122,12 @@ class Queue(Generic[T]):
 
     @property
     def index(self) -> int:
+        # TODO: fix the docs cuz updated (uses next() now and no longer wraps)
+        # fixed?
         """
         Get current index.
 
         Setting the index higher than Queue length will wrap around.
-
-        If repeat is not Single, the next item will be the one ahead of set index,
-        use Queue.jump to avoid this
         """
         return self._index
 

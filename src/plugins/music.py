@@ -1,10 +1,8 @@
 import os
 import json
-
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
-
 from utils.checks import user_connected, user_and_bot_connected, bot_connected
 from utils.data import MusicData, music_data
 from utils.muse import Player, DisconnectReason, Song, VideoNotFoundError
@@ -19,9 +17,13 @@ class Music(commands.Cog):
 
     async def join_vc(self, vc: discord.VoiceChannel | discord.StageChannel) -> Player:
         """Join a voice channel."""
+        id = vc.guild.id
         voice_client: discord.VoiceClient = await vc.connect(self_deaf=True)
-        self.data.players[voice_client.guild.id] = player = Player(voice_client)
-        return player
+        if voice_client.guild.id not in self.data.players:
+            self.data.players[id] = Player(voice_client)
+        else:
+            self.data.players[id].voice_client = voice_client
+        return self.data.players[id]
 
     @app_commands.command(name='join')
     @app_commands.guild_only()
@@ -41,15 +43,18 @@ class Music(commands.Cog):
             pass
 
     @app_commands.command(name='leave')
+    @app_commands.describe(clear = 'Should I clear this channel\'s queue?')
     @app_commands.guild_only()
-    async def _leave(self, interaction: Interaction) -> None:
+    async def _leave(self, interaction: Interaction, clear: bool | None) -> None:
         """Leave the channel and remove the queue"""
         player = self.data.players[interaction.guild_id]
         await player.leave()
         await interaction.response.send_message('Leaving')
         player = self.data.players[interaction.guild_id]
-        player.queue.clear()
-        del self.data.players[interaction.guild_id]
+        if clear:
+            # I don't trust the gc to not cause memory leaks on del
+            player.queue.clear()
+            del self.data.players[interaction.guild_id]
 
     @app_commands.command(name='add')
     @app_commands.describe(query='What to search for')
@@ -154,7 +159,7 @@ class Music(commands.Cog):
             return
         q = player.queue
         song = q.current
-        await interaction.response.send_message(embed=song.to_embed())
+        await interaction.response.send_message(embed=song.embed)
 
     @app_commands.command(name='skip')
     @app_commands.describe(offset='How far to skip')
@@ -201,7 +206,7 @@ class Music(commands.Cog):
     async def _pause(self, interaction: Interaction):
         """Pause playback"""
         player = self.data.players[interaction.guild_id]
-        player.voice_client.pause()
+        player.pause()
         await interaction.response.send_message('Paused')
 
     @app_commands.command(name='resume')
@@ -210,7 +215,7 @@ class Music(commands.Cog):
     async def _resume(self, interaction: Interaction):
         """Resume playback"""
         player = self.data.players[interaction.guild_id]
-        player.voice_client.resume()
+        player.resume()
         await interaction.response.send_message('Resumed')
 
     @app_commands.command(name='remove')
@@ -248,7 +253,8 @@ class Music(commands.Cog):
     ):
         if member.bot:
             if member.id == self.client.user.id and after.channel is None:
-                del self.data.players[member.guild.id, None]
+                # del self.data.players[member.guild.id, None]
+                pass
             return
         player = self.data.players.get(member.guild.id, None)
         if player is None:

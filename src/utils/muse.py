@@ -5,7 +5,7 @@ import time
 import enum
 import discord
 from attrs import define
-from typing import Any, Callable, Optional, Self
+from typing import Any, Callable, Optional
 from discord import FFmpegPCMAudio
 from discord.opus import Encoder as OpusEncoder
 from discord.enums import SpeakingState
@@ -86,16 +86,19 @@ class Song:
         ).set_thumbnail(url=self.thumbnail)
         return embed
 
-    @staticmethod
-    def find_by_query(query: str) -> Self:
+    @classmethod
+    def find_by_query(cls, query: str):
         """Find a Song object from a search query"""
         results = pytube.Search(query).results
         if not results:
             raise VideoNotFoundError(f'Couldn\'t find video from query {query}')
-        video = results[0]
-        url = video.streams.get_audio_only().url
+        video: pytube.YouTube = results[0]
+        audio_stream = video.streams.get_audio_only()
+        if audio_stream is None:
+            raise VideoNotFoundError
+        url = audio_stream.url
 
-        return Song(
+        return cls(
             title=video.title,
             channel_name=video.author,
             thumbnail=video.thumbnail_url,
@@ -104,12 +107,15 @@ class Song:
             duration=video.length
         )
 
-    @staticmethod
-    def find_by_url(url: str) -> Self:
+    @classmethod
+    def find_by_url(cls, url: str):
         """Find a Song object from a youtube url"""
         video = pytube.YouTube(url)
-        url = video.streams.get_audio_only().url
-        return Song(
+        audio_stream = video.streams.get_audio_only()
+        if audio_stream is None:
+            raise VideoNotFoundError
+        url = audio_stream.url
+        return cls(
             title=video.title,
             channel_name=video.author,
             thumbnail=video.thumbnail_url,
@@ -155,7 +161,7 @@ class Player(threading.Thread):
         self.daemon = True
         self.voice_client = voice_client
         self.voice_client.encoder = OpusEncoder()
-        self.queue = Queue() if queue is None else queue
+        self.queue: Queue[Song] = Queue() if queue is None else queue
 
         self.source = None
 
@@ -167,8 +173,8 @@ class Player(threading.Thread):
 
         self._end = threading.Event()
         self._source_set = threading.Event()
-        self._resumed = threading.Event()
-        self._resumed.set()
+        self._paused = threading.Event()
+        self._paused.set()
         self._connected = voice_client._connected
 
         self.on_error = on_error
@@ -180,6 +186,7 @@ class Player(threading.Thread):
 
         play = self.voice_client.send_audio_packet
 
+        # possibly bugged since connected is only being checked if the inner while loop isn't running
         while self._connected.is_set():
             self._active.wait()
             for song in self.queue:
@@ -187,8 +194,8 @@ class Player(threading.Thread):
                 self.source = FFmpegPCMAudio(song.url, **FFMPEG_SOURCE_OPTIONS)
                 self._end.clear()
                 while not self._end.is_set():
-                    if not self._resumed.is_set():
-                        self._resumed.wait()
+                    if not self._paused.is_set():
+                        self._paused.wait()
                         continue
 
                     if not self._connected.is_set():
@@ -263,7 +270,7 @@ class Player(threading.Thread):
         if blocking and self.is_playing():
             self._source_set.clear()
         self._end.set()
-        self._resumed.set()
+        self._paused.set()
         self._speak(SpeakingState.none)
         self._source_set.wait()
 
@@ -271,22 +278,22 @@ class Player(threading.Thread):
         await self.voice_client.disconnect()
 
     def pause(self, *, update_speaking: bool = True) -> None:
-        self._resumed.clear()
+        self._paused.clear()
         if update_speaking:
             self._speak(SpeakingState.none)
 
     def resume(self, *, update_speaking: bool = True) -> None:
         self.loops = 0
         self._start = time.perf_counter()
-        self._resumed.set()
+        self._paused.set()
         if update_speaking:
             self._speak(SpeakingState.voice)
 
     def is_playing(self) -> bool:
-        return self.source is not None and self._resumed.is_set() and not self._end.is_set()
+        return self.source is not None and self._paused.is_set() and not self._end.is_set()
 
     def is_paused(self) -> bool:
-        return not self._end.is_set() and not self._resumed.is_set()
+        return not self._end.is_set() and not self._paused.is_set()
 
     def _speak(self, speaking: SpeakingState):
         asyncio.run_coroutine_threadsafe(

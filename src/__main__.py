@@ -23,7 +23,7 @@ class Bot(commands.Bot):
         command_prefix: str,
         *,
         plugin_dir: str = 'plugins',
-        **kwargs: dict[str, Any]
+        **kwargs
     ) -> None:
         super().__init__(command_prefix, **kwargs)
         self._plugins_dir = plugin_dir
