@@ -12,7 +12,10 @@ LISTA_MUDRIH = [
     'S kim si, s njim si.',
     'Tko umre na jesen, njemu nema zime.',
     'Tko jede, taj sere.',
-    'Na mrtvom vuku i zec kurac ostri',
+    'Na mrtvom vuku i zec kurac ostri.',
+    'Kad sam trijezan mislim sto govorim, kad sam pijan govorim sto mislim.',
+    'Bolje kurac u ruci nego skola u struci.',
+    'Viski kad potece postanemo ljudsko smece',
 ]
 
 

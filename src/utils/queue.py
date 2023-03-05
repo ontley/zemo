@@ -32,6 +32,10 @@ class Queue(Generic[T]):
     """
     Works like a spotify song Queue.
 
+    Because the point of this class is to allow changing the repeat mode,
+    it makes it impossible to normally loop over the same queue twice
+    without resetting the index
+
     Parameters
     ----------
     items: `Optional[Iterable[T]]`
@@ -52,7 +56,7 @@ class Queue(Generic[T]):
         items: Optional[Iterable[T]] = None,
         *,
         items_once: Optional[Iterable[T]] = None,
-        repeat: RepeatMode = RepeatMode.All,
+        repeat: RepeatMode = RepeatMode.Off,
         index: int = 0
     ) -> None:
         self._items = [] if items is None else list(items)
@@ -61,6 +65,10 @@ class Queue(Generic[T]):
         self._repeat = repeat
         self._index = index
         self._advance = False
+        """
+        Used for proper iterating in next.
+        Without it, a queue with All/Off repeat would start on the 2nd item.
+        """
 
     def __iter__(self) -> Self:
         """Get self as an iterator."""
@@ -69,17 +77,14 @@ class Queue(Generic[T]):
     def __next__(self) -> T:
         if self._alt_queue:
             return self._alt_queue.popleft()
-        elif self._items:
-            if self._repeat != RepeatMode.Single and self._advance:
-                self._index += 1
-            self._advance = True
-            if self._index >= len(self._items):
-                if self._repeat == RepeatMode.Off:
-                    raise StopIteration
-                self._index %= len(self._items)
-            return self._items[self._index]
-        else:
-            raise StopIteration
+        if self._repeat != RepeatMode.Single and self._advance:
+            self._index += 1
+        self._advance = True
+        if self._index >= len(self._items):
+            if self._repeat == RepeatMode.Off:
+                raise StopIteration
+            self._index %= len(self._items)
+        return self._items[self._index]
 
     def __bool__(self) -> bool:
         """Check if the queue is non-empty."""
@@ -96,8 +101,6 @@ class Queue(Generic[T]):
     def __repr__(self) -> str:
         """Representation of the Queue object"""
         return f'{type(self).__qualname__}(alt_queue={self._alt_queue}, items={self._items}, index={self._index})'
-
-    __hash__ = None
 
     @property
     def items(self) -> list[T]:
@@ -156,8 +159,3 @@ class Queue(Generic[T]):
         self._items.clear()
         self._alt_queue.clear()
 
-
-if __name__ == '__main__':
-    q = Queue(range(10))
-    q.repeat = RepeatMode.Off
-    print(' '.join(map(str, q)))

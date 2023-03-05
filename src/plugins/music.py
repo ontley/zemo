@@ -20,7 +20,8 @@ class Music(commands.Cog):
         id = vc.guild.id
         voice_client: discord.VoiceClient = await vc.connect(self_deaf=True)
         if voice_client.guild.id not in self.data.players:
-            self.data.players[id] = Player(voice_client)
+            self.data.players[id] = player = Player(voice_client)
+            player.queue.repeat = RepeatMode.All
         else:
             self.data.players[id].voice_client = voice_client
         return self.data.players[id]
@@ -261,13 +262,12 @@ class Music(commands.Cog):
             return
         if after.channel == player.voice_client.channel != before.channel:
             player.cancel_timeout(DisconnectReason.ALONE_IN_CHANNEL)
-            with open(f'{os.getcwd()}/data/user_themes.json') as f:
-                themes: dict[str, str] = json.load(f)
-                if str(member.id) in themes:
-                    user_theme_url = themes[str(member.id)]
-                    player.queue.alt_queue.append(Song.find_by_url(user_theme_url)) 
-                    if not player.is_playing():
-                        player.play()
+            themes = self.data.user_themes
+            if str(member.id) in themes:
+                user_theme_url = themes[str(member.id)]
+                player.queue.alt_queue.append(Song.find_by_url(user_theme_url)) 
+                if not player.is_playing():
+                    player.play()
         else:
             members = player.voice_client.channel.members
             if all(user.bot for user in members):

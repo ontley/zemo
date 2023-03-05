@@ -1,5 +1,3 @@
-import os
-import json
 from discord import app_commands, Interaction
 from discord.ext import commands
 from utils.muse import Song, VideoNotFoundError
@@ -24,13 +22,9 @@ class Theme(app_commands.Group, name='theme'):
             await interaction.edit_original_response(content=f'Could not find a video from url `{url}`')
             return
         try:
-            with open(f'{os.getcwd()}/data/user_themes.json', 'r') as f:
-                data = json.load(f)
-            with open(f'{os.getcwd()}/data/user_themes.json', 'w') as f:
-                data[interaction.user.id] = url
-                json.dump(data, f)
-                await interaction.edit_original_response(content=f'Set your theme to {song.title}', embed=song.embed)
-                return
+            self.data.set_theme(interaction.user.id, song.url)
+            await interaction.edit_original_response(content=f'Set your theme to {song.title}', embed=song.embed)
+            return
         except OSError as e:
             print(e)
             await interaction.edit_original_response(content='Failed to set your theme')
@@ -38,13 +32,9 @@ class Theme(app_commands.Group, name='theme'):
     @app_commands.command(name='clear')
     async def _clear(self, interaction: Interaction) -> None:
         try:
-            with open(f'{os.getcwd()}/data/user_themes.json', 'r') as f:
-                data = json.load(f)
-            with open(f'{os.getcwd()}/data/user_themes.json', 'w') as f:
-                del data[interaction.user.id]
-                json.dump(data, f)
-                await interaction.response.send_message(content=f'Cleared your theme', ephemeral=True)
-                return
+            self.data.clear_theme(interaction.user.id)
+            await interaction.response.send_message(content=f'Cleared your theme', ephemeral=True)
+            return
         except OSError as e:
             print(e)
             await interaction.response.send_message(content='Failed to set your theme', ephemeral=True)
