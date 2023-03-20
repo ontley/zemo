@@ -1,7 +1,10 @@
-from discord import app_commands, Interaction
+from discord import app_commands
+from discord import Interaction
 from discord.ext import commands
-from utils.muse import Song, VideoNotFoundError
-from utils.data import MusicData, music_data
+from utils.muse import Song
+from utils.muse import VideoNotFoundError
+from utils.data import MusicData
+from utils.data import music_data
 
 
 @app_commands.guild_only()

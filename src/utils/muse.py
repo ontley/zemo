@@ -5,7 +5,8 @@ import time
 import enum
 import discord
 from attrs import define
-from typing import Any, Callable, Optional
+from typing import Any
+from typing import Callable
 from discord import FFmpegPCMAudio
 from discord.opus import Encoder as OpusEncoder
 from discord.enums import SpeakingState
@@ -153,9 +154,9 @@ class Player(threading.Thread):
         self,
         voice_client: discord.VoiceClient,
         *,
-        queue: Optional[Queue[Song]] = None,
+        queue: Queue[Song] | None = None,
         timeout: float = 15.0,
-        on_error: Optional[Callable[[Optional[Exception]], Any]] = None
+        on_error: Callable[[Exception | None], Any] | None = None
     ) -> None:
         threading.Thread.__init__(self)
         self.daemon = True

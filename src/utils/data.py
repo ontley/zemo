@@ -1,16 +1,13 @@
 import os
 import json
-from attrs import define
 from utils.muse import Player
 
 
 __all__ = [
     'MusicData',
-    'music_data'
+    'music_data',
 ]
 
-
-@define(frozen=True)
 class MusicData:
     players: dict[int, Player] = {}
     """Mapping of voice channel ids to Player objects"""
@@ -33,8 +30,7 @@ class MusicData:
         themes = self.user_themes
         with open(f'{os.getcwd()}/data/user_themes.json', 'w') as f:
             del themes[str(user_id)]
-            json.dump(themes, f)
- 
+            json.dump(themes, f) 
+
 
 music_data = MusicData()
-

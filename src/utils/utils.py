@@ -33,13 +33,13 @@ def to_ordinal(n: int) -> str:
     """Convert an integer to it's english ordinal representation."""
     if n in range(11, 14):
         return f'{n}th'
-    remainder = n % 10
+    last_digit = n % 10
     ordinal = str(n)
-    if remainder == 1:
+    if last_digit == 1:
         ordinal += 'st'
-    elif remainder == 2:
+    elif last_digit == 2:
         ordinal += 'nd'
-    elif remainder == 3:
+    elif last_digit == 3:
         ordinal += 'rd'
     else:
         ordinal += 'th'

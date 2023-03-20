@@ -1,5 +1,6 @@
 from discord.ext import commands
-from discord import app_commands, Interaction
+from discord import app_commands
+from discord import Interaction
 from random import choice
 
 
@@ -15,7 +16,6 @@ LISTA_MUDRIH = [
     'Na mrtvom vuku i zec kurac ostri.',
     'Kad sam trijezan mislim sto govorim, kad sam pijan govorim sto mislim.',
     'Bolje kurac u ruci nego skola u struci.',
-    'Viski kad potece postanemo ljudsko smece',
 ]
 
 

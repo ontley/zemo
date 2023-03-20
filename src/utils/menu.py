@@ -1,12 +1,10 @@
 import discord
 from discord import Interaction
-from discord.ui import (
-    Button,
-    Modal,
-    TextInput,
-    View,
-    button
-)
+from discord.ui import Button
+from discord.ui import Modal
+from discord.ui import TextInput
+from discord.ui import View
+from discord.ui import button
 
 
 __all__ = [

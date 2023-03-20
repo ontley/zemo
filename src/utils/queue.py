@@ -1,14 +1,10 @@
 from collections import deque
 from enum import Enum
 from random import shuffle
-from typing import (
-    Deque,
-    Generic,
-    Iterable,
-    Optional,
-    TypeVar,
-    Self
-)
+from typing import Generic
+from typing import Iterable
+from typing import TypeVar
+from typing import Self
 
 
 __all__ = [
@@ -33,8 +29,10 @@ class Queue(Generic[T]):
     Works like a spotify song Queue.
 
     Because the point of this class is to allow changing the repeat mode,
-    it makes it impossible to normally loop over the same queue twice
+    it makes it impossible to normally iterate over the same queue object twice
     without resetting the index
+
+    To avoid this problem, copy the object
 
     Parameters
     ----------
@@ -53,15 +51,15 @@ class Queue(Generic[T]):
 
     def __init__(
         self,
-        items: Optional[Iterable[T]] = None,
+        items: Iterable[T] | None = None,
         *,
-        items_once: Optional[Iterable[T]] = None,
+        alt_queue: Iterable[T] | None = None,
         repeat: RepeatMode = RepeatMode.Off,
         index: int = 0
     ) -> None:
-        self._items = [] if items is None else list(items)
+        self._items: list[T] = [] if items is None else list(items)
         # TODO: items_once needs to be added in __add__ and other methods
-        self._alt_queue = deque() if items_once is None else deque(items_once)
+        self._alt_queue: deque[T] = deque() if alt_queue is None else deque(alt_queue)
         self._repeat = repeat
         self._index = index
         self._advance = False
@@ -108,7 +106,7 @@ class Queue(Generic[T]):
         return self._items
 
     @property
-    def alt_queue(self) -> Deque[T]:
+    def alt_queue(self) -> deque[T]:
         """Get a reference to the non-repeating items"""
         return self._alt_queue
 
@@ -158,4 +156,5 @@ class Queue(Generic[T]):
     def clear(self) -> None:
         self._items.clear()
         self._alt_queue.clear()
+
 

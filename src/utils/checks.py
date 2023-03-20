@@ -1,4 +1,5 @@
-from discord import app_commands, Interaction
+from discord import app_commands
+from discord import Interaction
 
 
 __all__ = [

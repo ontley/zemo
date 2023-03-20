@@ -4,7 +4,7 @@ import importlib
 import json
 import os
 from discord.ext import commands
-from typing import Any, Sequence
+from typing import Sequence
 
 from dotenv import load_dotenv
 load_dotenv(f'{os.getcwd()}/.env')
