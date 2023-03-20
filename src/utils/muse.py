@@ -4,13 +4,20 @@ import pytube
 import time
 import enum
 import discord
+
 from attrs import define
+
 from typing import Any
 from typing import Callable
+
 from discord import FFmpegPCMAudio
+
 from discord.opus import Encoder as OpusEncoder
+
 from discord.enums import SpeakingState
+
 from utils.queue import Queue
+
 from utils import to_readable_time
 
 

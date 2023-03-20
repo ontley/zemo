@@ -1,5 +1,7 @@
 import discord
+
 from discord import Interaction
+
 from discord.ui import Button
 from discord.ui import Modal
 from discord.ui import TextInput
@@ -53,7 +55,7 @@ class ListMenu(View):
     def __init__(
         self,
         items: list[str],
-        owner: discord.Member,
+        owner: discord.Member | discord.User,
         *,
         title: str,
         description: str,

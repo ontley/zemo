@@ -1,17 +1,23 @@
 import discord
+
 from discord import app_commands
 from discord import Interaction
+
 from discord.ext import commands
+
 from utils.checks import user_connected
 from utils.checks import user_and_bot_connected
 from utils.checks import bot_connected
+
 from utils.data import MusicData
 from utils.data import music_data
+
 from utils.muse import Player
 from utils.muse import DisconnectReason
 from utils.muse import Song
 from utils.muse import VideoNotFoundError
 from utils.menu import ListMenu
+
 from utils.queue import RepeatMode
 
 
@@ -58,8 +64,6 @@ class Music(commands.Cog):
         await interaction.response.send_message('Leaving')
         player = self.data.players[interaction.guild_id]
         if clear:
-            # I don't trust the gc to not cause memory leaks on del
-            player.queue.clear()
             del self.data.players[interaction.guild_id]
 
     @app_commands.command(name='add')

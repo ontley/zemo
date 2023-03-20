@@ -1,6 +1,9 @@
 from collections import deque
+
 from enum import Enum
+
 from random import shuffle
+
 from typing import Generic
 from typing import Iterable
 from typing import TypeVar
