@@ -55,7 +55,7 @@ class Music(commands.Cog):
             pass
 
     @app_commands.command(name='leave')
-    @app_commands.describe(clear = 'Should I clear this channel\'s queue?')
+    @app_commands.describe(clear='Should I clear this channel\'s queue?')
     @app_commands.guild_only()
     async def _leave(self, interaction: Interaction, clear: bool | None) -> None:
         """Leave the channel and remove the queue"""
@@ -178,10 +178,7 @@ class Music(commands.Cog):
     async def _skip(self, interaction: Interaction, offset: int = 1) -> None:
         """Skip a certain number of songs, negative values allowed"""
         player = self.data.players[interaction.guild_id]
-        try:
-            player.queue.index += offset
-        except ValueError:
-            await interaction.response.send_message(f'')
+        player.queue.index += offset
         player.stop()
         song = player.queue.current
         await interaction.response.send_message(f'Skipped to `{song.title}`!')
@@ -196,13 +193,14 @@ class Music(commands.Cog):
         queue = player.queue
         if position < 1:
             await interaction.response.send_message(
-                'Can only jump to positive values',
+                'Position can\'t be less than 1',
                 ephemeral=True
             )
             return
         elif position > len(queue):
             await interaction.response.send_message(
-                f'Position {position} is out of range of the queue', ephemeral=True
+                f'Position {position} is out of range of the queue',
+                ephemeral=True
             )
             return
         queue.index = position - 1
@@ -229,7 +227,7 @@ class Music(commands.Cog):
         await interaction.response.send_message('Resumed')
 
     @app_commands.command(name='remove')
-    @app_commands.describe(position='Position of the song to remove, removes the current song if not given')
+    @app_commands.describe(position='Position of the song to remove, removes th current song if not given')
     @app_commands.guild_only()
     @user_and_bot_connected()
     async def _remove(self, interaction: Interaction, position: int | None = None):
@@ -274,7 +272,7 @@ class Music(commands.Cog):
             themes = self.data.user_themes
             if str(member.id) in themes:
                 user_theme_url = themes[str(member.id)]
-                player.queue.alt_queue.append(Song.find_by_url(user_theme_url)) 
+                player.queue.alt_queue.append(Song.find_by_url(user_theme_url))
                 if not player.is_playing():
                     player.play()
         else:

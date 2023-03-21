@@ -126,8 +126,6 @@ class Queue(Generic[T]):
 
     @property
     def index(self) -> int:
-        # TODO: fix the docs cuz updated (uses next() now and no longer wraps)
-        # fixed?
         """
         Get current index.
 
