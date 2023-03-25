@@ -16,7 +16,7 @@ from discord.opus import Encoder as OpusEncoder
 
 from discord.enums import SpeakingState
 
-from utils.queue import Queue
+from queue import Queue
 
 from utils import to_readable_time
 
@@ -54,7 +54,7 @@ class Song:
     """
     Represents a song data type.
 
-    Song objects are returned from `find_video` instead of being created manually.
+    Song objects are returned from static methods instead of being created manually.
 
     Attributes
     ----------
@@ -194,8 +194,8 @@ class Player(threading.Thread):
 
         play = self.voice_client.send_audio_packet
 
-        # possibly bugged since connected is only being checked if the inner while loop isn't running
-        while self._connected.is_set():
+        while True:
+            self._connected.wait()
             self._active.wait()
             for song in self.queue:
                 self._source_set.set()

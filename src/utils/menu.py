@@ -34,7 +34,7 @@ class PageModal(Modal):
 
 class ListMenu(View):
     """
-    An embed description-based list display with page changing through modals.
+    A description-based embed with page changing through buttons and modals.
 
     The text displayed is gathered through the items' str implementations.
 

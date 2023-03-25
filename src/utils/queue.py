@@ -33,9 +33,7 @@ class Queue(Generic[T]):
 
     Because the point of this class is to allow changing the repeat mode,
     it makes it impossible to normally iterate over the same queue object twice
-    without resetting the index
-
-    To avoid this problem, copy the object
+    without resetting the index. To avoid this problem, copy the object
 
     Parameters
     ----------

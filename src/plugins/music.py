@@ -46,10 +46,16 @@ class Music(commands.Cog):
         player = self.data.players.get(user.voice.channel.id, None)
         if player is None:
             await self.join_vc(user.voice.channel)
-            await interaction.response.send_message('Joining your voice channel', ephemeral=True)
+            await interaction.response.send_message(
+                'Joining your voice channel',
+                ephemeral=True
+            )
             return
         if player.voice_client.channel == interaction.user.voice.channel:
-            await interaction.response.send_message('Already in your channel', ephemeral=True)
+            await interaction.response.send_message(
+                'Already in your channel',
+                ephemeral=True
+            )
         else:
             # TODO: Swap channels menu, also don't lol and shid
             pass
@@ -227,7 +233,7 @@ class Music(commands.Cog):
         await interaction.response.send_message('Resumed')
 
     @app_commands.command(name='remove')
-    @app_commands.describe(position='Position of the song to remove, removes th current song if not given')
+    @app_commands.describe(position='Position of the song to remove, removes the current song if not given')
     @app_commands.guild_only()
     @user_and_bot_connected()
     async def _remove(self, interaction: Interaction, position: int | None = None):
