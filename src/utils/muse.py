@@ -16,7 +16,7 @@ from discord.opus import Encoder as OpusEncoder
 
 from discord.enums import SpeakingState
 
-from queue import Queue
+from .queue import Queue
 
 from utils import to_readable_time
 
@@ -162,8 +162,8 @@ class Player(threading.Thread):
         voice_client: discord.VoiceClient,
         *,
         queue: Queue[Song] | None = None,
-        timeout: float = 15.0,
-        on_error: Callable[[Exception | None], Any] | None = None
+        timeout: float = 60.0,
+        on_error: Callable[[Exception | None], Any] | None = None,
     ) -> None:
         threading.Thread.__init__(self)
         self.daemon = True
@@ -177,6 +177,7 @@ class Player(threading.Thread):
         self._active.set()
 
         self._timeout_delay = timeout
+        # maybe make this a set with DisconnectReason having the timer as attr
         self._timeouts: dict[DisconnectReason, threading.Timer] = {}
 
         self._end = threading.Event()
@@ -266,7 +267,7 @@ class Player(threading.Thread):
         try:
             self.on_error(e)
         except Exception as err:
-            raise PlayerError('Player on_error raised exception') from err
+            raise PlayerError(f'Player on_error raised exception: {err}') from err
 
     def stop(self, blocking: bool = True) -> None:
         '''
@@ -306,5 +307,3 @@ class Player(threading.Thread):
     def _speak(self, speaking: SpeakingState):
         asyncio.run_coroutine_threadsafe(
             self.voice_client.ws.speak(speaking), self.voice_client.loop)
-
-

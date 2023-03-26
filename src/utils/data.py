@@ -1,13 +1,14 @@
 import os
 import json
 
-from utils.muse import Player
+from .muse import Player
 
 
 __all__ = [
     'MusicData',
     'music_data',
 ]
+
 
 class MusicData:
     players: dict[int, Player] = {}
@@ -25,13 +26,13 @@ class MusicData:
         with open(f'{os.getcwd()}/data/user_themes.json', 'w') as f:
             themes[str(user_id)] = url
             json.dump(themes, f)
- 
+
     def clear_theme(self, user_id: int | str):
         """Clear (delete) a user's theme"""
         themes = self.user_themes
         with open(f'{os.getcwd()}/data/user_themes.json', 'w') as f:
             del themes[str(user_id)]
-            json.dump(themes, f) 
+            json.dump(themes, f)
 
 
 music_data = MusicData()

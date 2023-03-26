@@ -56,7 +56,7 @@ class Queue(Generic[T]):
         *,
         alt_queue: Iterable[T] | None = None,
         repeat: RepeatMode = RepeatMode.Off,
-        index: int = 0
+        index: int = 0,
     ) -> None:
         self._items: list[T] = [] if items is None else list(items)
         # TODO: items_once needs to be added in __add__ and other methods
