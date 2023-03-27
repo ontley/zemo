@@ -47,4 +47,4 @@ class Theme(app_commands.Group, name='theme'):
 
 
 async def setup(client: commands.Bot, guilds: list[int]) -> None:
-    client.tree.add_command(Theme(client, music_data), guilds=guilds)
+    client.tree.add_command(Theme(client, music_data), guilds=guilds) # type: ignore

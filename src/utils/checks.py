@@ -12,13 +12,13 @@ __all__ = [
 def user_and_bot_connected():
     """Fails if either the user or bot aren't connected to the same channel."""
     async def predicate(interaction: Interaction) -> bool:
-        user_voice = interaction.user.voice
-        bot_voice = interaction.guild.me.voice
+        user_voice = interaction.user.voice # type: ignore
+        bot_voice = interaction.guild.me.voice # type: ignore
 
         msg = ''
         if user_voice is None:
             msg = 'You are not connected to a voice channel\n'
-        if bot_voice is None or bot_voice.channel != user_voice.channel:
+        if bot_voice is None or bot_voice.channel != user_voice.channel: # type: ignore
             msg += '\nI\'m not connected to your voice channel'
         if msg:
             await interaction.response.send_message(msg, ephemeral=True)
@@ -30,7 +30,7 @@ def user_and_bot_connected():
 def user_connected():
     """Fails if the user is not connected to a voice channel."""
     async def predicate(interaction: Interaction) -> bool:
-        if interaction.user.voice is None:
+        if interaction.user.voice is None: # type: ignore
             await interaction.response.send_message(
                 'You are not connected to a voice channel',
                 ephemeral=True
@@ -43,7 +43,7 @@ def user_connected():
 def bot_connected():
     """Fails if the bot is not connected to voice channel."""
     async def predicate(interaction: Interaction) -> bool:
-        if interaction.guild.me.voice is None:
+        if interaction.guild.me.voice is None: # type: ignore
             await interaction.response.send_message(
                 'I\'m not connected to a voice channel',
                 ephemeral=True

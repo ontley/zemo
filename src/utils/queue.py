@@ -31,7 +31,7 @@ class Queue(Generic[T]):
     """
     Works like a spotify song Queue.
 
-    Because the point of this class is to allow changing the repeat mode,
+    Because the point of this class is to allow changing the repeat mode during iteration,
     it makes it impossible to normally iterate over the same queue object twice
     without resetting the index. To avoid this problem, copy the object
 
@@ -39,11 +39,12 @@ class Queue(Generic[T]):
     ----------
     items: `Optional[Iterable[T]]`
         The list of items the queue contains
-    items_once: `Optional[Iterable[T]]`
-        The list of items to play after current song.
+    priority_queue: `Optional[Iterable[T]]`
+        Items with priority over regular items.
 
-        If this list has any elements, those will have priority over
-        items from the regular list
+        The queue will first yield the priority items, and then the regular items.
+
+        Priority items are popped off when yielded, this is done to imitate the Spotify queue.
     repeat: `RepeatMode`
         The repeat state
     index: `int`
@@ -54,18 +55,18 @@ class Queue(Generic[T]):
         self,
         items: Iterable[T] | None = None,
         *,
-        alt_queue: Iterable[T] | None = None,
+        priority_items: Iterable[T] | None = None,
         repeat: RepeatMode = RepeatMode.Off,
         index: int = 0,
     ) -> None:
         self._items: list[T] = [] if items is None else list(items)
-        # TODO: items_once needs to be added in __add__ and other methods
-        self._alt_queue: deque[T] = deque() if alt_queue is None else deque(alt_queue)
+        self._prio_items: deque[T] = deque() if priority_items is None else deque(priority_items)
+        self._current: T | None = None
         self._repeat = repeat
         self._index = index
         self._advance = False
         """
-        Used for proper iterating in next.
+        Used for proper iterating in __next__.
         Without it, a queue with All/Off repeat would start on the 2nd item.
         """
 
@@ -74,8 +75,9 @@ class Queue(Generic[T]):
         return self
 
     def __next__(self) -> T:
-        if self._alt_queue:
-            return self._alt_queue.popleft()
+        if self._prio_items:
+            self._current = self._prio_items.popleft()
+            return self._current
         if self._repeat != RepeatMode.Single and self._advance:
             self._index += 1
         self._advance = True
@@ -83,23 +85,28 @@ class Queue(Generic[T]):
             if self._repeat == RepeatMode.Off:
                 raise StopIteration
             self._index %= len(self._items)
-        return self._items[self._index]
+        self._current = self._items[self._index]
+        return self._current
 
     def __bool__(self) -> bool:
         """Check if the queue is non-empty."""
-        return bool(self._items) or bool(self._alt_queue)
+        return bool(self._items) or bool(self._prio_items)
 
     def __eq__(self, other: Self) -> bool:
         """Compare the items of the iterables."""
-        return self.items == other.items and self.alt_queue == other.alt_queue
+        return self.items == other.items and self.prio_items == other.prio_items
 
     def __len__(self) -> int:
-        """Get the amount of items the Queue contains."""
+        """The length of the queue's items"""
         return len(self._items)
+
+    def len_prop(self) -> int:
+        """The length of the priority queue"""
+        return len(self._prio_items)
 
     def __repr__(self) -> str:
         """Representation of the Queue object"""
-        return f'{type(self).__qualname__}(alt_queue={self._alt_queue}, items={self._items}, index={self._index})'
+        return f'{type(self).__qualname__}(alt_queue={self._prio_items}, items={self._items}, index={self._index})'
 
     @property
     def items(self) -> list[T]:
@@ -107,9 +114,9 @@ class Queue(Generic[T]):
         return self._items
 
     @property
-    def alt_queue(self) -> deque[T]:
-        """Get a reference to the non-repeating items"""
-        return self._alt_queue
+    def prio_items(self) -> deque[T]:
+        """Get a reference to the priority items"""
+        return self._prio_items
 
     @property
     def repeat(self) -> RepeatMode:
@@ -139,21 +146,31 @@ class Queue(Generic[T]):
         self._advance = False
 
     @property
-    def current(self) -> T:
-        """Get current item."""
-        return self._items[self._index]
+    def current(self) -> T | None:
+        """
+        Get current (last yielded) item.
+
+        None if the queue hasn't yielded anything
+        """
+        return self._current
 
     def shuffle(self) -> None:
-        """Shuffles the Queue in place, putting the current item T at position 1 (index 0), and shuffling the rest"""
+        """
+        Shuffles the Queue in place, putting the current item at position 1 (index 0), and shuffling the rest.
+
+        This does NOT shuffle the priority queue.
+        """
         curr_i, curr = self.index, self.current
-        self._items[0], self._items[curr_i] = curr, self._items[0]
-        lst = self._items[1:]
-        shuffle(lst)
-        self._items[1:] = lst
+        # check if the queue has yielded anything
+        if curr is None:
+            shuffle(self._items)
+        else:
+            self._items[0], self._items[curr_i] = curr, self._items[0]
+            lst = self._items[1:]
+            shuffle(lst)
+            self._items[1:] = lst
         self._index = 0
 
     def clear(self) -> None:
         self._items.clear()
-        self._alt_queue.clear()
-
-
+        self._prio_items.clear()

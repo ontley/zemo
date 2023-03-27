@@ -29,7 +29,7 @@ class Memes(commands.Cog):
     @app_commands.describe(message='What do you want me to say')
     @app_commands.guild_only()
     async def _say(self, interaction: Interaction, message: str) -> None:
-        await interaction.channel.send(message)
+        await interaction.channel.send(message) # type: ignore
         await interaction.response.send_message('Sent message', ephemeral=True)
 
     @app_commands.command(name='mudra', description='daj mi jednu mudru')
@@ -39,4 +39,4 @@ class Memes(commands.Cog):
 
 
 async def setup(client: commands.Bot, guilds: list[int]) -> None:
-    await client.add_cog(Memes(client), guilds=guilds)
+    await client.add_cog(Memes(client), guilds=guilds) # type: ignore

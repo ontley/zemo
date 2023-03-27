@@ -1,14 +1,11 @@
 import asyncio
 import threading
-import pytube
+import innertube
 import time
 import enum
 import discord
 
 from attrs import define
-
-from typing import Any
-from typing import Callable
 
 from discord import FFmpegPCMAudio
 
@@ -19,6 +16,9 @@ from discord.enums import SpeakingState
 from .queue import Queue
 
 from utils import to_readable_time
+
+
+innertube_client = innertube.InnerTube("WEB")
 
 
 __all__ = [
@@ -94,25 +94,31 @@ class Song:
         ).set_thumbnail(url=self.thumbnail)
         return embed
 
+    @staticmethod
+    def get_audio_url(id: str) -> str:
+        data = innertube_client.player(id)['streamingData']
+        formats = data['formats'] + data['adaptiveFormats']
+        audio_streams = filter(lambda x: 'audio' in x['mimeType'], formats)
+        return sorted(audio_streams, key=lambda x: x['bitrate'])[-1]['url']
+
     @classmethod
     def find_by_query(cls, query: str):
         """Find a Song object from a search query"""
-        results = pytube.Search(query).results
-        if not results:
-            raise VideoNotFoundError(f'Couldn\'t find video from query {query}')
-        video: pytube.YouTube = results[0]
-        audio_stream = video.streams.get_audio_only()
-        if audio_stream is None:
-            raise VideoNotFoundError
-        url = audio_stream.url
-
+        # return cls(
+        #     title=video.title,
+        #     channel_name=video.author,
+        #     thumbnail=video.thumbnail_url,
+        #     page_url=video.watch_url,
+        #     url=url,
+        #     duration=video.length
+        # )
         return cls(
-            title=video.title,
-            channel_name=video.author,
-            thumbnail=video.thumbnail_url,
-            page_url=video.watch_url,
-            url=url,
-            duration=video.length
+            title='a',
+            channel_name='a',
+            thumbnail='https://i.ytimg.com/vi/zBbgXFvLceA/hqdefault.jpg?sqp=-oaymwEbCKgBEF5IVfKriqkDDggBFQAAiEIYAXABwAEG&rs=AOn4CLA3wfUXWaYppXoiVOvfCmXNd3ieWQ',
+            page_url='https://www.youtube.com/watch?v=SkvGynfyYY8',
+            url=cls.get_audio_url('SkvGynfyYY8'),
+            duration=12
         )
 
     @classmethod
@@ -133,10 +139,7 @@ class Song:
         )
 
 
-# Yes this is mostly stolen from the library itself
-# I just wanted to make a version which can work with a loop
-# and is a single thread instead of creating a thread per source
-class Player(threading.Thread):
+class Player(discord.player.AudioPlayer):
     """
     Wrapper class for controlling playback to a voice channel.
 
@@ -146,8 +149,8 @@ class Player(threading.Thread):
         The client of the bot's connection to a voice channel
     queue: `Optional[Queue[T]]`
         An optional starting queue
-    on_error: `Optional[Callable[[Optional[Exception]], Any]]`
-        A function run when the player errors
+    timeout: `float` = 60.0
+        The default delay before automatically disconnecting if not playing or if the bot is alone
 
     Attributes
     ----------
@@ -163,48 +166,33 @@ class Player(threading.Thread):
         *,
         queue: Queue[Song] | None = None,
         timeout: float = 60.0,
-        on_error: Callable[[Exception | None], Any] | None = None,
     ) -> None:
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self.voice_client = voice_client
-        self.voice_client.encoder = OpusEncoder()
+        super().__init__(None, voice_client) # type: ignore
         self.queue: Queue[Song] = Queue() if queue is None else queue
-
-        self.source = None
-
-        self._active = threading.Event()
-        self._active.set()
 
         self._timeout_delay = timeout
         # maybe make this a set with DisconnectReason having the timer as attr
         self._timeouts: dict[DisconnectReason, threading.Timer] = {}
-
-        self._end = threading.Event()
         self._source_set = threading.Event()
-        self._paused = threading.Event()
-        self._paused.set()
-        self._connected = voice_client._connected
-
-        self.on_error = on_error
+        """Required for blocking in `stop` until the source is set again in `_do_run`"""
 
     def _do_run(self):
+        # version of the default _do_run, featuring Queue for sources
         self.loops = 0
         self._start = time.perf_counter()
         self._speak(SpeakingState.voice)
 
-        play = self.voice_client.send_audio_packet
+        play_audio = self.client.send_audio_packet
 
         while True:
             self._connected.wait()
-            self._active.wait()
             for song in self.queue:
+                self._set_source(FFmpegPCMAudio(song.url, **FFMPEG_SOURCE_OPTIONS))
                 self._source_set.set()
-                self.source = FFmpegPCMAudio(song.url, **FFMPEG_SOURCE_OPTIONS)
                 self._end.clear()
                 while not self._end.is_set():
-                    if not self._paused.is_set():
-                        self._paused.wait()
+                    if not self._resumed.is_set():
+                        self._resumed.wait()
                         continue
 
                     if not self._connected.is_set():
@@ -215,11 +203,11 @@ class Player(threading.Thread):
                     self.loops += 1
 
                     data = self.source.read()
+                    print(data)
                     if not data:
-                        self._end.set()
                         break
 
-                    play(data, encode=not self.source.is_opus())
+                    play_audio(data, encode=not self.source.is_opus())
                     next_time = self._start + self.DELAY * self.loops
                     delay = max(0, self.DELAY + (next_time - time.perf_counter()))
                     time.sleep(delay)
@@ -228,82 +216,55 @@ class Player(threading.Thread):
     def _timeout(self):
         asyncio.run_coroutine_threadsafe(
             self.leave(),
-            loop=self.voice_client.loop
+            loop=self.client.loop
         )
 
-    def add_timeout(self, reason: DisconnectReason):
+    def add_timeout(self, reason: DisconnectReason, timeout: float | None = None):
+        """
+        Add a timeout
+
+        The timeout delay can be overriden with the `timeout` argument
+        """
+        # add system for checking which timeout will pass sooner
+        # this also made me realise that this system should be rewritten
+        # since it requires manual timeout cancelling which really
+        # shouldn't be a thing except for the Alone reason
         if reason in self._timeouts:
             raise ValueError(f'Timer of type {reason} was already added')
+        if timeout is None:
+            timeout = self._timeout_delay
         timer = threading.Timer(
-            self._timeout_delay,
+            timeout,
             self._timeout
         )
         timer.start()
         self._timeouts[reason] = timer
 
     def cancel_timeout(self, reason: DisconnectReason):
+        """Cancel a timeout"""
         timer = self._timeouts.pop(reason, None)
         if timer is not None:
             timer.cancel()
 
-    def run(self):
-        try:
-            self._do_run()
-        except Exception as e:
-            if self.source is not None:
-                self.source.cleanup()
-                self._call_on_error(e)
-
     def play(self):
+        """Start the player"""
         self.cancel_timeout(DisconnectReason.NOT_PLAYING)
-        if self.is_alive():
-            self._active.set()
-        else:
+        if not self.is_alive():
             self.start()
 
-    def _call_on_error(self, e):
-        if self.on_error is None:
-            raise e
-        try:
-            self.on_error(e)
-        except Exception as err:
-            raise PlayerError(f'Player on_error raised exception: {err}') from err
-
     def stop(self, blocking: bool = True) -> None:
-        '''
+        """
         Stop playing audio, automatically starts next song.
 
         If `blocking` is True and the player is playing,
         block until the next source is gathered from queue
-        '''
+        """
         if blocking and self.is_playing():
             self._source_set.clear()
         self._end.set()
-        self._paused.set()
+        self._resumed.set()
         self._speak(SpeakingState.none)
         self._source_set.wait()
 
     async def leave(self) -> None:
-        await self.voice_client.disconnect()
-
-    def pause(self, *, update_speaking: bool = True) -> None:
-        self._paused.clear()
-        if update_speaking:
-            self._speak(SpeakingState.none)
-
-    def resume(self, *, update_speaking: bool = True) -> None:
-        self.loops = 0
-        self._start = time.perf_counter()
-        self._paused.set()
-        if update_speaking:
-            self._speak(SpeakingState.voice)
-
-    def is_playing(self) -> bool:
-        return self.source is not None and self._paused.is_set() and not self._end.is_set()
-
-    def is_paused(self) -> bool:
-        return not self._end.is_set() and not self._paused.is_set()
-
-    def _speak(self, speaking: SpeakingState):
-        asyncio.run_coroutine_threadsafe(
-            self.voice_client.ws.speak(speaking), self.voice_client.loop)
+        await self.client.disconnect()
