@@ -4,6 +4,8 @@ import innertube
 import time
 import enum
 import discord
+import pprint
+import yt_dlp
 
 from attrs import define
 
@@ -18,8 +20,12 @@ from .queue import Queue
 from utils import to_readable_time
 
 
-innertube_client = innertube.InnerTube("WEB")
-
+ytdl_options = {
+    'format': 'bestaudio/best',
+    'noplaylist': True,
+    'quiet': True,
+}
+ytdl_client = yt_dlp.YoutubeDL(ytdl_options)
 
 __all__ = [
     'DisconnectReason',
@@ -96,47 +102,36 @@ class Song:
 
     @staticmethod
     def get_audio_url(id: str) -> str:
-        data = innertube_client.player(id)['streamingData']
-        formats = data['formats'] + data['adaptiveFormats']
-        audio_streams = filter(lambda x: 'audio' in x['mimeType'], formats)
-        return sorted(audio_streams, key=lambda x: x['bitrate'])[-1]['url']
+        data = ytdl_client.extract_info(f'https://youtube.com/watch?v={id}', download=False)
+        print(data['url'])
+        return data['url']
+        
+    @classmethod
+    def _extract_data(cls, data: dict):
+        """Find a Song object from a search query"""
+
+        # TODO: yt_dlp can search youtube itself, no need for innertube
+
+        thumbnail_url = data['thumbnails'][0]['url']
+        title = data['title']
+        channel = data['uploader']
+        page_url = data['webpage_url']
+        url = data['url']
+        duration = data['duration']
+        
+        return cls(
+            title=title,
+            channel_name=channel,
+            thumbnail=thumbnail_url,
+            page_url=page_url,
+            url=url,
+            duration=duration,
+        )
 
     @classmethod
     def find_by_query(cls, query: str):
-        """Find a Song object from a search query"""
-        # return cls(
-        #     title=video.title,
-        #     channel_name=video.author,
-        #     thumbnail=video.thumbnail_url,
-        #     page_url=video.watch_url,
-        #     url=url,
-        #     duration=video.length
-        # )
-        return cls(
-            title='a',
-            channel_name='a',
-            thumbnail='https://i.ytimg.com/vi/zBbgXFvLceA/hqdefault.jpg?sqp=-oaymwEbCKgBEF5IVfKriqkDDggBFQAAiEIYAXABwAEG&rs=AOn4CLA3wfUXWaYppXoiVOvfCmXNd3ieWQ',
-            page_url='https://www.youtube.com/watch?v=SkvGynfyYY8',
-            url=cls.get_audio_url('SkvGynfyYY8'),
-            duration=12
-        )
-
-    @classmethod
-    def find_by_url(cls, url: str):
-        """Find a Song object from a youtube url"""
-        video = pytube.YouTube(url)
-        audio_stream = video.streams.get_audio_only()
-        if audio_stream is None:
-            raise VideoNotFoundError
-        url = audio_stream.url
-        return cls(
-            title=video.title,
-            channel_name=video.author,
-            thumbnail=video.thumbnail_url,
-            page_url=video.watch_url,
-            url=url,
-            duration=video.length
-        )
+        data = ytdl_client.extract_info(f'ytsearch: {query}', download=False)['entries'][0]
+        return cls._extract_data(data)
 
 
 class Player(discord.player.AudioPlayer):
@@ -180,9 +175,9 @@ class Player(discord.player.AudioPlayer):
         # version of the default _do_run, featuring Queue for sources
         self.loops = 0
         self._start = time.perf_counter()
-        self._speak(SpeakingState.voice)
 
         play_audio = self.client.send_audio_packet
+        self._speak(SpeakingState.voice)
 
         while True:
             self._connected.wait()
@@ -203,7 +198,6 @@ class Player(discord.player.AudioPlayer):
                     self.loops += 1
 
                     data = self.source.read()
-                    print(data)
                     if not data:
                         break
 

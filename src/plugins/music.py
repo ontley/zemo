@@ -291,7 +291,7 @@ class Music(commands.Cog):
             themes = self.data.user_themes
             if str(member.id) in themes:
                 user_theme_url = themes[str(member.id)]
-                player.queue.prio_items.append(Song.find_by_url(user_theme_url))
+                player.queue.prio_items.append(Song.find_by_query(user_theme_url))
                 if not player.is_playing():
                     player.play()
         else:
