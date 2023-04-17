@@ -62,9 +62,9 @@ class Queue(Generic[T]):
         self._items: list[T] = [] if items is None else list(items)
         self._prio_items: deque[T] = deque() if priority_items is None else deque(priority_items)
         self._current: T | None = None
-        self._repeat = repeat
-        self._index = index
-        self._advance = False
+        self._repeat: RepeatMode = repeat
+        self._index: int = index
+        self._advance: bool = False
         """
         Used for proper iterating in __next__.
         Without it, a queue with All/Off repeat would start on the 2nd item.

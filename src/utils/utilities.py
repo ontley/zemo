@@ -44,7 +44,3 @@ def to_ordinal(n: int) -> str:
     else:
         ordinal += 'th'
     return ordinal
-
-
-if __name__ == '__main__':
-    pass

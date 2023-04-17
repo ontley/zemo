@@ -23,8 +23,8 @@ from utils.queue import RepeatMode
 
 class Music(commands.Cog):
     def __init__(self, client: commands.Bot, data: MusicData) -> None:
-        self.client = client
-        self.data = data
+        self.client: commands.Bot = client
+        self.data: MusicData = data
 
     async def join_vc(self, vc: discord.VoiceChannel | discord.StageChannel) -> Player:
         """Join a voice channel."""
@@ -61,16 +61,13 @@ class Music(commands.Cog):
             pass
 
     @app_commands.command(name='leave')
-    @app_commands.describe(clear='Should I clear this channel\'s queue?')
     @app_commands.guild_only()
-    async def _leave(self, interaction: Interaction, clear: bool | None) -> None:
+    async def _leave(self, interaction: Interaction) -> None:
         """Leave the channel and remove the queue"""
         player = self.data.players[interaction.guild_id] # type: ignore
         await player.leave()
         await interaction.response.send_message('Leaving')
         player = self.data.players[interaction.guild_id] # type: ignore
-        if clear:
-            del self.data.players[interaction.guild_id] # type: ignore
 
     @app_commands.command(name='add')
     @app_commands.describe(query='What to search for')
@@ -280,7 +277,7 @@ class Music(commands.Cog):
     ):
         if member.bot:
             if member.id == self.client.user.id and after.channel is None: # type: ignore
-                # del self.data.players[member.guild.id, None]
+                del self.data.players[member.guild.id, None] # type: ignore
                 pass
             return
         player = self.data.players.get(member.guild.id, None)

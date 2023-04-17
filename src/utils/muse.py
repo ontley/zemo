@@ -110,8 +110,6 @@ class Song:
     def _extract_data(cls, data: dict):
         """Find a Song object from a search query"""
 
-        # TODO: yt_dlp can search youtube itself, no need for innertube
-
         thumbnail_url = data['thumbnails'][0]['url']
         title = data['title']
         channel = data['uploader']
@@ -163,12 +161,14 @@ class Player(discord.player.AudioPlayer):
         timeout: float = 60.0,
     ) -> None:
         super().__init__(None, voice_client) # type: ignore
+        voice_client.encoder = OpusEncoder()
+
         self.queue: Queue[Song] = Queue() if queue is None else queue
 
-        self._timeout_delay = timeout
+        self._timeout_delay: float = timeout
         # maybe make this a set with DisconnectReason having the timer as attr
         self._timeouts: dict[DisconnectReason, threading.Timer] = {}
-        self._source_set = threading.Event()
+        self._source_set: threading.Event = threading.Event()
         """Required for blocking in `stop` until the source is set again in `_do_run`"""
 
     def _do_run(self):
@@ -262,3 +262,4 @@ class Player(discord.player.AudioPlayer):
 
     async def leave(self) -> None:
         await self.client.disconnect()
+        self.client = None

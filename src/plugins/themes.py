@@ -13,8 +13,8 @@ from utils.data import music_data
 @app_commands.guild_only()
 class Theme(app_commands.Group, name='theme'):
     def __init__(self, client: commands.Bot, data: MusicData) -> None:
-        self.client = client
-        self.data = data
+        self.client: commands.Bot = client
+        self.data: MusicData = data
         super().__init__()
 
     @app_commands.command(name='set')

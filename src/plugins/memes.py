@@ -11,19 +11,21 @@ LISTA_MUDRIH = [
     'Kad kurac.',
     'Dakle... ja se jesam drogirao.',
     'Imam neke ljude u glavi.',
-    'Bolje mijesat alkohol nego beton.',
+    'Bolje miješat alkohol nego beton.',
     'S kim si, s njim si.',
     'Tko umre na jesen, njemu nema zime.',
     'Tko jede, taj sere.',
-    'Na mrtvom vuku i zec kurac ostri.',
-    'Kad sam trijezan mislim sto govorim, kad sam pijan govorim sto mislim.',
-    'Bolje kurac u ruci nego skola u struci.',
+    'Na mrtvom vuku i zec kurac oštri.',
+    'Kad sam trijezan mislim što govorim, kad sam pijan govorim što mislim.',
+    'Bolje kurac u ruci nego škola u struci.',
+    '42°34\'45.8"N 18°15\'26.6"E',
+    'Džabe široka ramena kad su muda malena',
 ]
 
 
 class Memes(commands.Cog):
     def __init__(self, client: commands.Bot) -> None:
-        self.client = client
+        self.client: commands.Bot = client
 
     @app_commands.command(name='say')
     @app_commands.describe(message='What do you want me to say')

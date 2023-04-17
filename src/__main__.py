@@ -28,18 +28,18 @@ class Bot(commands.Bot):
         **kwargs
     ) -> None:
         super().__init__(command_prefix, **kwargs)
-        self._plugins_dir = plugin_dir
+        self._plugins_dir_path: str = plugin_dir
 
     async def load_plugins(
         self,
         *,
         guilds: Sequence[discord.Object]
     ) -> None:
-        plugin_path = f'src/{self._plugins_dir}'
+        plugin_path = f'src/{self._plugins_dir_path}'
 
         for filename in glob.iglob('**/*.py', root_dir=plugin_path, recursive=True):
-            clean = filename.replace("\\", ".").rstrip('.py')
-            ext_path = f'{self._plugins_dir}.{clean}'
+            clean_filename = filename.replace("\\", ".").rstrip('.py')
+            ext_path = f'{self._plugins_dir_path}.{clean_filename}'
             mod = importlib.import_module(ext_path)
             if not hasattr(mod, 'setup'):
                 print(f"Plugin {mod.__name__} has no setup function")
@@ -52,20 +52,27 @@ class Bot(commands.Bot):
         await self.load_plugins(guilds=GUILD_IDS)
 
 
-TOKEN = os.environ.get('DISCORD_TOKEN')
-if TOKEN is None:
-    raise ValueError("DISCORD_TOKEN token not found in .env file")
-APP_ID = os.environ.get('APPLICATION_ID')
-if APP_ID is None:
-    raise ValueError("APPLICATION_ID token not found in .env file")
+def main() -> int:
+    TOKEN = os.environ.get('DISCORD_TOKEN')
+    if TOKEN is None:
+        raise ValueError("DISCORD_TOKEN token not found in .env file")
+    APP_ID = os.environ.get('APPLICATION_ID')
+    if APP_ID is None:
+        raise ValueError("APPLICATION_ID token not found in .env file")
 
-intents = discord.Intents.default()
-intents.message_content = True
-client = Bot(
-    '+',
-    plugin_dir='plugins',
-    application_id=APP_ID,
-    intents=intents
-)
+    intents = discord.Intents.default()
+    intents.message_content = True
+    client = Bot(
+        '+',
+        plugin_dir='plugins',
+        application_id=APP_ID,
+        intents=intents
+    )
 
-client.run(TOKEN)
+    client.run(TOKEN)
+
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
