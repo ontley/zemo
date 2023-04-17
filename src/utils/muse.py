@@ -1,6 +1,5 @@
 import asyncio
 import threading
-import innertube
 import time
 import enum
 import discord
@@ -176,7 +175,7 @@ class Player(discord.player.AudioPlayer):
         self.loops = 0
         self._start = time.perf_counter()
 
-        play_audio = self.client.send_audio_packet
+        play_audio = self.client.send_audio_packet #type: ignore
         self._speak(SpeakingState.voice)
 
         while True:
@@ -210,7 +209,7 @@ class Player(discord.player.AudioPlayer):
     def _timeout(self):
         asyncio.run_coroutine_threadsafe(
             self.leave(),
-            loop=self.client.loop
+            loop=self.client.loop # type: ignore
         )
 
     def add_timeout(self, reason: DisconnectReason, timeout: float | None = None):
@@ -253,7 +252,7 @@ class Player(discord.player.AudioPlayer):
         If `blocking` is True and the player is playing,
         block until the next source is gathered from queue
         """
-        if blocking and self.is_playing():
+        if blocking and self.is_playing() and self.queue:
             self._source_set.clear()
         self._end.set()
         self._resumed.set()
@@ -261,5 +260,6 @@ class Player(discord.player.AudioPlayer):
         self._source_set.wait()
 
     async def leave(self) -> None:
-        await self.client.disconnect()
-        self.client = None
+        if self.client is not None:
+            await self.client.disconnect()
+            self.client = None
