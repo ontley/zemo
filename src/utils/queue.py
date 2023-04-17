@@ -78,6 +78,8 @@ class Queue(Generic[T]):
         if self._prio_items:
             self._current = self._prio_items.popleft()
             return self._current
+        # _advance is False if the queue hasn't yielded anything, or it skipped/jumped
+        # this is needed because we don't want to advance the queue if we're guaranteeing the next item
         if self._repeat != RepeatMode.Single and self._advance:
             self._index += 1
         self._advance = True
