@@ -20,6 +20,7 @@ LISTA_MUDRIH = [
     'Bolje kurac u ruci nego škola u struci.',
     '42°34\'45.8"N 18°15\'26.6"E',
     'Džabe široka ramena kad su muda malena',
+    'Sve 5 samo je Renault 4',
 ]
 
 

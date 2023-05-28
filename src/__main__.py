@@ -1,18 +1,20 @@
 import discord
-import glob
 import importlib
 import json
 import os
 
-from discord.ext import commands
+from pathlib import Path
 
+from types import ModuleType
 from typing import Sequence
 
+from discord.ext import commands
+
 from dotenv import load_dotenv
-load_dotenv(f'{os.getcwd()}/.env')
+load_dotenv('.env')
 
 
-with open('data/bot_info.json', 'r') as bot_info_json:
+with open(Path('data/bot_info.json'), 'r') as bot_info_json:
     guild_ids: dict[str, int] = json.load(bot_info_json)['guilds']
     GUILD_IDS: list[discord.Object] = list(map(discord.Object, guild_ids))
 
@@ -28,19 +30,18 @@ class Bot(commands.Bot):
         **kwargs
     ) -> None:
         super().__init__(command_prefix, **kwargs)
-        self._plugins_dir_path: str = plugin_dir
+        self._plugins_dir_path: Path = Path(plugin_dir)
 
     async def load_plugins(
         self,
         *,
         guilds: Sequence[discord.Object]
     ) -> None:
-        plugin_path = f'src/{self._plugins_dir_path}'
+        plugin_path = Path('src') / self._plugins_dir_path
 
-        for filename in glob.iglob('**/*.py', root_dir=plugin_path, recursive=True):
-            clean_filename = filename.replace("\\", ".").rstrip('.py')
-            ext_path = f'{self._plugins_dir_path}.{clean_filename}'
-            mod = importlib.import_module(ext_path)
+        for filename in Path(plugin_path).rglob('*.py'):
+            ext_path: Path = self._plugins_dir_path / filename.stem
+            mod: ModuleType = importlib.import_module(str(ext_path).replace('/', '.'))
             if not hasattr(mod, 'setup'):
                 print(f"Plugin {mod.__name__} has no setup function")
                 continue
@@ -53,12 +54,8 @@ class Bot(commands.Bot):
 
 
 def main() -> int:
-    TOKEN = os.environ.get('DISCORD_TOKEN')
-    if TOKEN is None:
-        raise ValueError("DISCORD_TOKEN token not found in .env file")
-    APP_ID = os.environ.get('APPLICATION_ID')
-    if APP_ID is None:
-        raise ValueError("APPLICATION_ID token not found in .env file")
+    TOKEN = os.environ['DISCORD_TOKEN']
+    APP_ID = os.environ['APPLICATION_ID']
 
     intents = discord.Intents.default()
     intents.message_content = True

@@ -23,7 +23,7 @@ class Theme(app_commands.Group, name='theme'):
     async def _set(self, interaction: Interaction, url: str) -> None:
         await interaction.response.defer(ephemeral=True)
         try:
-            song: Song = Song.find_by_url(url)
+            song: Song = Song.find_by_query(url)
         except VideoNotFoundError:
             await interaction.edit_original_response(content=f'Could not find a video from url `{url}`')
             return
