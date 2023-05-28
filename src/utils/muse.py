@@ -9,9 +9,7 @@ import yt_dlp
 from attrs import define
 
 from discord import FFmpegPCMAudio
-
 from discord.opus import Encoder as OpusEncoder
-
 from discord.enums import SpeakingState
 
 from .queue import Queue
