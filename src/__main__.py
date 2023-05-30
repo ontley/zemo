@@ -41,7 +41,7 @@ class Bot(commands.Bot):
 
         for filename in Path(plugin_path).rglob('*.py'):
             ext_path: Path = self._plugins_dir_path / filename.stem
-            mod: ModuleType = importlib.import_module(str(ext_path).replace('/', '.'))
+            mod: ModuleType = importlib.import_module('.'.join(ext_path.parts))
             if not hasattr(mod, 'setup'):
                 print(f"Plugin {mod.__name__} has no setup function")
                 continue
