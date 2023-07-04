@@ -100,6 +100,8 @@ class Song:
     @staticmethod
     def get_audio_url(id: str) -> str:
         data = ytdl_client.extract_info(f'https://youtube.com/watch?v={id}', download=False)
+        if not isinstance(data, dict):
+            raise TypeError("ytdl found jack shit")
         print(data['url'])
         return data['url']
         
@@ -125,7 +127,10 @@ class Song:
 
     @classmethod
     def find_by_query(cls, query: str):
-        data = ytdl_client.extract_info(f'ytsearch: {query}', download=False)['entries'][0]
+        data = ytdl_client.extract_info(f'ytsearch: {query}', download=False)
+        if not isinstance(data, dict):
+            raise TypeError("ytdlp found jack shit")
+        data = data['entries'][0]
         return cls._extract_data(data)
 
 
@@ -260,4 +265,4 @@ class Player(discord.player.AudioPlayer):
     async def leave(self) -> None:
         if self.client is not None:
             await self.client.disconnect()
-            self.client = None
+            self.client = None # type: ignore
