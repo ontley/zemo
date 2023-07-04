@@ -266,6 +266,7 @@ class Music(commands.Cog):
         """Clear the queue"""
         player = self.data.players[interaction.guild_id] # type: ignore
         player.queue.clear()
+        player.stop()
         await interaction.response.send_message('Cleared the queue')
 
     @commands.Cog.listener()

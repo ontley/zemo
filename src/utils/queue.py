@@ -78,6 +78,8 @@ class Queue(Generic[T]):
         if self._prio_items:
             self._current = self._prio_items.popleft()
             return self._current
+        if len(self._items) == 0:
+            raise StopIteration
         # _advance is False if the queue hasn't yielded anything, or it skipped/jumped
         # this is needed because we don't want to advance the queue if we're guaranteeing the next item
         if self._repeat != RepeatMode.Single and self._advance:
@@ -101,10 +103,6 @@ class Queue(Generic[T]):
     def __len__(self) -> int:
         """The length of the queue's items"""
         return len(self._items)
-
-    def len_prop(self) -> int:
-        """The length of the priority queue"""
-        return len(self._prio_items)
 
     def __repr__(self) -> str:
         """Representation of the Queue object"""
