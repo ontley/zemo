@@ -4,9 +4,7 @@ from enum import Enum
 
 from random import shuffle
 
-from typing import Generic
 from typing import Iterable
-from typing import TypeVar
 from typing import Self
 
 
@@ -14,9 +12,6 @@ __all__ = [
     'RepeatMode',
     'Queue'
 ]
-
-
-T = TypeVar('T')
 
 
 class RepeatMode(Enum):
@@ -27,7 +22,7 @@ class RepeatMode(Enum):
     All = 'all'
 
 
-class Queue(Generic[T]):
+class Queue[T]:
     """
     Works like a spotify song Queue.
 

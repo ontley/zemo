@@ -5,20 +5,20 @@ from discord import Interaction
 
 from discord.ext import commands
 
-from utils.checks import user_connected
-from utils.checks import user_and_bot_connected
-from utils.checks import bot_connected
+from zemo.utils.checks import user_connected
+from zemo.utils.checks import user_and_bot_connected
+from zemo.utils.checks import bot_connected
 
-from utils.data import MusicData
-from utils.data import music_data
+from zemo.utils.data import MusicData
+from zemo.utils.data import music_data
 
-from utils.muse import Player
-from utils.muse import DisconnectReason
-from utils.muse import Song
-from utils.muse import VideoNotFoundError
-from utils.menu import ListMenu
+from zemo.utils.muse import Player
+from zemo.utils.muse import DisconnectReason
+from zemo.utils.muse import Song
+from zemo.utils.muse import VideoNotFoundError
+from zemo.utils.menu import ListMenu
 
-from utils.queue import RepeatMode
+from zemo.utils.queue import RepeatMode
 
 
 class Music(commands.Cog):
@@ -76,7 +76,8 @@ class Music(commands.Cog):
     async def _add(self, interaction: Interaction, query: str) -> None:
         """Add a song to the queue and start playing if not already started"""
         await interaction.response.defer()
-        player = self.data.players.get(interaction.guild_id, None) # type: ignore
+        assert interaction.guild_id is not None # fucking type checking
+        player = self.data.players.get(interaction.guild_id, None) 
         if player is None:
             player = await self.join_vc(interaction.user.voice.channel) # type: ignore
         try:

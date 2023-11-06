@@ -14,7 +14,7 @@ from discord.enums import SpeakingState
 
 from .queue import Queue
 
-from utils import to_readable_time
+from zemo.utils import to_readable_time
 
 
 ytdl_options = {

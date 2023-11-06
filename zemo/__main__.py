@@ -37,10 +37,11 @@ class Bot(commands.Bot):
         *,
         guilds: Sequence[discord.Object]
     ) -> None:
-        plugin_path = Path('src') / self._plugins_dir_path
+        plugin_path = Path('zemo') / self._plugins_dir_path
 
         for filename in Path(plugin_path).rglob('*.py'):
-            ext_path: Path = self._plugins_dir_path / filename.stem
+            ext_path: Path = plugin_path / filename.stem
+            print(ext_path)
             mod: ModuleType = importlib.import_module('.'.join(ext_path.parts))
             if not hasattr(mod, 'setup'):
                 print(f"Plugin {mod.__name__} has no setup function")
